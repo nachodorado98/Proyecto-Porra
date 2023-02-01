@@ -6,8 +6,11 @@ from tkinter import messagebox
 import os
 #Importamos requests
 import requests
-#Impotamos la clase Scrapper para realizar el web scrapping
+#Importamos la clase Scrapper para realizar el web scrapping
 from scrappeador import Scrapper
+#Importamos la clase ConsultaMongo para interactuar con la BBDD
+from consultas_mongo import ConsultaMongo
+
 
 #Creamos la ventana inicial
 root=Tk()
@@ -18,9 +21,46 @@ root.resizable(0,0)
 #Creamos un diccionario que alamcena los grupos introducidos por el usuario
 grupos_jugador={}
 
+monguito=ConsultaMongo()
+
+#print(list(monguito.todos()))
+
+
+def pilla_textos_labels(label):
+    
+    return str(label.cget("text"))
 
 def bbdd(lista_octavos,lista_cuartos,lista_semis,lista_final,campeon,lista_consolacion,tercero, usuario, ventanita):
-    pass
+    
+    global grupos_jugador
+
+    resultados_jugador=grupos_jugador.copy()
+    
+    if pilla_textos_labels(campeon)!=" " and pilla_textos_labels(tercero)!=" ":
+
+        resultados_jugador["Octavos"]=[pilla_textos_labels(label) for label in lista_octavos]
+        resultados_jugador["Cuartos"]=[pilla_textos_labels(label) for label in lista_cuartos]
+        resultados_jugador["Semis"]=[pilla_textos_labels(label) for label in lista_semis]
+        resultados_jugador["Final"]=[pilla_textos_labels(label) for label in lista_final]
+        resultados_jugador["Campeon"]=pilla_textos_labels(campeon)
+        resultados_jugador["Consolacion"]=[pilla_textos_labels(label) for label in lista_consolacion]
+        resultados_jugador["Tercero"]=pilla_textos_labels(tercero)
+        resultados_jugador["Usuario"]=usuario
+
+        if monguito.insertar_datos(resultados_jugador):
+
+            messagebox.showinfo("COMPLETADO!!","Datos introducidos correctamente!!")
+
+        else:
+
+            messagebox.showwarning("ERROR!!","Error al insertar los datos")
+
+
+
+        ventanita.destroy()
+
+    else:
+        messagebox.showwarning("ATENCIÓN!!","Debes introducir todos los equipos!!")
 
 def rellenar(boton_click, boton_poner, e=None):
     
@@ -41,10 +81,11 @@ def cuadro_completo():
     global grupos_jugador
     
     path_actual=os.getcwd() 
+
+    usuario=entry_usuario.get().upper()
     
-    if entry_usuario.get().isalnum() and len(entry_usuario.get())>2:
+    if entry_usuario.get().isalnum() and len(usuario)>2 and monguito.consulta_usuario_libre(usuario):
     
-        usuario=entry_usuario.get().upper()
 
         entry_usuario.delete(0,END)
         btn_aceptar.config(state=DISABLED)
@@ -500,7 +541,8 @@ def cuadro_completo():
         ventanita.mainloop()
 
     else:
-        messagebox.showwarning("ATENCIÓN!!","Debes introducir un nombre valido!!")
+        messagebox.showwarning("ATENCIÓN!!",f"El nombre {usuario.title()} no es valido, debes introducir otro diferente.")
+        entry_usuario.delete(0,END)
 
 
 
