@@ -7,12 +7,13 @@ import json
 #Clase para scrappear los grupos y las eliminatorias
 class Scrapper():
 
-
+    #Inicializamos con el link y la temporada
     def __init__(self, link, temporada):
 
         self.link=link
         self.temporada=temporada
 
+    #Funcion para obtener la tabla de los grupos
     def scrappeo_grupos(self):
 
         #Inicializamos el diccionario para los grupos
@@ -29,7 +30,7 @@ class Scrapper():
             #Cogemos el contenedor del grupo
             contenedor=soup.find("div", id=f"all_results{self.temporada}82"+i)
             #Cogemos el grupo
-            grupo=contenedor.find("h3").text
+            grupo=contenedor.find("h3").text.split(" ")[1]
             #Cogemos la tabla de ese grupo
             tabla_grupo=contenedor.find("table", id=f"results{self.temporada}82{i}_overall").find("tbody").find_all("tr")
             #Obtenemos los equipos del grupo en el orden de posicion en el que se encuentran
