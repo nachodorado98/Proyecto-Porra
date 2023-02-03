@@ -40,6 +40,31 @@ class Comparador():
 		#Devolvemos la suma total de los puntos de los grupos y tambien los puntos de cada grupo
 		return sum(lista_puntos_bonificados_grupos), lista_puntos_bonificados_grupos
 
+
+	#Funcion para obtener los puntos de una eliminatoria
+	def puntos_eliminatoria(self, eliminatoria_usuario, eliminatoria_real, bonificacion:int):
+		#Intentamos obtener los puntos
+		try:
+			#Si es string (como el campeon y el tercero) evaluamos de ser igual
+			if isinstance(eliminatoria_real, str):
+				#Si es igual devolvemos los puntos
+				if eliminatoria_usuario==eliminatoria_real:
+					return bonificacion
+				else:
+					return 0
+			#Si es lista comprobamos que esta
+			else:
+				#Devolvemos la suma d elos puntos
+				return sum([bonificacion for i in eliminatoria_usuario if i in eliminatoria_real])
+		except:
+			return "Error en los puntos"
+
+	#Funcion para obtener los resultados finales de todos los jugadores
+	def resultados_finales(self, jugadores:list):
+
+		return [[i.nombre, i.puntos_total_grupos, i.puntos_octavos, i.puntos_cuartos, i.puntos_semis, i.puntos_final, i.puntos_campeon] for i in jugadores]
+
+
 #Clase Jugador para agregar los datos de cada uno de ellos
 class Jugador():
 

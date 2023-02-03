@@ -26,6 +26,7 @@ grupos_jugador={}
 #----------------------------------------------------------------------------------Scrappeo
 #url a scrappear y temporada
 #url="https://fbref.com/en/comps/8/2021-2022/2021-2022-Champions-League-Stats"
+#temporada="2021-2022"
 url="https://fbref.com/en/comps/8/Champions-League-Stats"
 temporada="2022-2023"
 
@@ -33,6 +34,8 @@ temporada="2022-2023"
 scrappeador=Scrapper(requests.get(url), temporada)
 #Scrappeamos los grupos con sus equipos en la posicion real
 diccionario_grupos_equipos=scrappeador.scrappeo_grupos()
+#Scrappeamos las eliminatorias
+diccionario_eliminatorias=scrappeador.scrappeo_eliminatorias()
 
 #Ordenamos los equipos dentro de cada grupo por orden alfabetico
 grupoA=sorted(diccionario_grupos_equipos["A"])
@@ -48,9 +51,6 @@ grupoH=sorted(diccionario_grupos_equipos["H"])
 #--------------------------------------------------------------------------BBDD
 #Creamos un objeto ConsultaMongo que nos permite conectarnos a la BBDD y realizar consultas
 monguito=ConsultaMongo()
-#Obtenemos todos los registros de la BBDD llamando a la funcion todos
-resultados_jugadores=list(monguito.todos())
-
 
 #-------------------------------------------------------------------------Comparador y Jugador Especial
 #Creamos un objeto comparador
@@ -58,54 +58,81 @@ comparador=Comparador()
 #Creamos un objeto jugador especial con su nombre como primera propiedad
 jugador_especial=Jugador("ResultadosReales")
 #Obtenemos la lista de los grupos y la añadimos como propiedad
-lista_grupos_jugador_especial=jugador_especial.grupos_jugador(diccionario_grupos_equipos)
-jugador_especial.grupos=lista_grupos_jugador_especial
+jugador_especial.grupos=jugador_especial.grupos_jugador(diccionario_grupos_equipos)
+#Añadimos la propiedad de los octavos
+jugador_especial.octavos=diccionario_eliminatorias["Octavos"]
+#Añadimos la propiedad de las semis
+jugador_especial.cuartos=diccionario_eliminatorias["Cuartos"]
+#Añadimos la propiedad de las semis
+jugador_especial.semis=diccionario_eliminatorias["Semis"]
+#Añadimos la propiedad de la final
+jugador_especial.final=diccionario_eliminatorias["Final"]
+#Añadimos la propiedad del campeon
+jugador_especial.campeon=diccionario_eliminatorias["Campeon"]
+#Añadimos la propiedad de la final de consolacion
+jugador_especial.consolacion=[]
+#Añadimos la propiedad del tercero
+jugador_especial.tercero=""
 
 
 #Funcion para obtener las puntuaciones y resultados de los jugadores
 def obtener_resultados():
 
+    #Obtenemos todos los registros de la BBDD llamando a la funcion todos
+    resultados_jugadores=list(monguito.todos())
+
     #Lista que contendrá todos los objetos jugadores
     objetos_jugadores=[]
-
     #Intentamos esta instruccion siempre y cuando haya algun jugador ya introducido
-    #try:
-    for i in resultados_jugadores:
-        #Creamos un objeto jugador con su nombre como primera propiedad
-        jugador=Jugador(i["Usuario"])
-        #Obtenemos la lista de los grupos y la añadimos como propiedad
-        lista_grupos_jugador=jugador.grupos_jugador(i)
-        jugador.grupos=lista_grupos_jugador
-        #Añadimos la propiedad de los octavos
-        jugador.octavos=i["Octavos"]
-        #Añadimos la propiedad de las semis
-        jugador.cuartos=i["Cuartos"]
-        #Añadimos la propiedad de las semis
-        jugador.semis=i["Semis"]
-        #Añadimos la propiedad de la final
-        jugador.final=i["Final"]
-        #Añadimos la propiedad del campeon
-        jugador.campeon=i["Campeon"]
-        #Añadimos la propiedad de la final de consolacion
-        jugador.consolacion=i["Consolacion"]
-        #Añadimos la propiedad del tercero
-        jugador.tercero=i["Tercero"]
+    try:
+        for i in resultados_jugadores:
+            #Creamos un objeto jugador con su nombre como primera propiedad
+            jugador=Jugador(i["Usuario"])
+            #Obtenemos la lista de los grupos y la añadimos como propiedad
+            jugador.grupos=jugador.grupos_jugador(i)
+            #Añadimos la propiedad de los octavos
+            jugador.octavos=i["Octavos"]
+            #Añadimos la propiedad de las semis
+            jugador.cuartos=i["Cuartos"]
+            #Añadimos la propiedad de las semis
+            jugador.semis=i["Semis"]
+            #Añadimos la propiedad de la final
+            jugador.final=i["Final"]
+            #Añadimos la propiedad del campeon
+            jugador.campeon=i["Campeon"]
+            #Añadimos la propiedad de la final de consolacion
+            jugador.consolacion=i["Consolacion"]
+            #Añadimos la propiedad del tercero
+            jugador.tercero=i["Tercero"]
+            #Comparamos el jugador con el jugador especial (resultados reales)
+            #Obtenemos los puntos de la fase de grupos tras haber juntado los grupos del usuario y los reales y añadimos las propiedades de los puntos por grupo y la puntuacion total de la fase de grupos
+            jugador.puntos_por_grupo=comparador.puntos_grupos(comparador.junta_grupos(jugador.grupos, jugador_especial.grupos))[1]
+            jugador.puntos_total_grupos=comparador.puntos_grupos(comparador.junta_grupos(jugador.grupos, jugador_especial.grupos))[0]
+            #Obtenemos los puntos de octavos y lo añadimos como propiedad
+            jugador.puntos_octavos=comparador.puntos_eliminatoria(jugador.octavos, jugador_especial.octavos, 5)
+            #Obtenemos los puntos de cuartos y lo añadimos como propiedad
+            jugador.puntos_cuartos=comparador.puntos_eliminatoria(jugador.cuartos, jugador_especial.cuartos, 10)
+            #Obtenemos los puntos de semis y lo añadimos como propiedad
+            jugador.puntos_semis=comparador.puntos_eliminatoria(jugador.semis, jugador_especial.semis, 25)
+            #Obtenemos los puntos de la final y lo añadimos como propiedad
+            jugador.puntos_final=comparador.puntos_eliminatoria(jugador.final, jugador_especial.final, 50)
+            #Obtenemos los puntos del campeon y lo añadimos como propiedad
+            jugador.puntos_campeon=comparador.puntos_eliminatoria(jugador.campeon, jugador_especial.campeon, 100)
+            #Obtenemos los puntos de consolacion y lo añadimos como propiedad
+            jugador.puntos_consolacion=comparador.puntos_eliminatoria(jugador.consolacion, jugador_especial.consolacion, 0)
+            #Obtenemos los puntos del tercero y lo añadimos como propiedad
+            jugador.puntos_tercero=comparador.puntos_eliminatoria(jugador.tercero, jugador_especial.tercero, 0)
 
-        #Comparamos el jugador con el jugador especial (resultados reales)
-        #Obtenemos los puntos de la fase de grupos tras haber juntado los grupos del usuario y los reales
-        puntuacion_grupos=comparador.puntos_grupos(comparador.junta_grupos(jugador.grupos, jugador_especial.grupos))
-        #Añadimos las propiedades de los puntos por grupo y la puntuacion total de la fase de grupos
-        jugador.puntos_por_grupo=puntuacion_grupos[1]
-        jugador.puntos_total_grupos=puntuacion_grupos[0]
+            #Agregamos el jugador a la lista de objetos jugadores
+            objetos_jugadores.append(jugador)
 
-        #Agregamos el jugador a la lista de objetos jugadores
-        objetos_jugadores.append(jugador)
-        print(jugador.nombre)
-        print(jugador.puntos_total_grupos)
+        #Obtenemos los resultados finales llamando a resultados_finales
+        puntuacion_final=comparador.resultados_finales(objetos_jugadores)
+        print(puntuacion_final)
 
     #Si aun no hay ningun jugador mostramos un mensaje de warning
-    #except:
-    #    messagebox.showwarning("ERROR!!","No hay usuarios para comparar")
+    except:
+        messagebox.showwarning("ERROR!!","No hay usuarios para comparar")
 
 
 #Funcion para obtener los textos de los labels
