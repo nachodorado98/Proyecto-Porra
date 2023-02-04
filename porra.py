@@ -75,6 +75,43 @@ jugador_especial.consolacion=[]
 jugador_especial.tercero=""
 
 
+#Funcion para crear la ventana de los resultados y visualizarlos
+def ventana_resultados(resultados):
+
+    #Creamos la ventana
+    ventana=Toplevel()
+    ventana.geometry("500x530")
+    ventana.title("Resultados")
+
+    #Creamos el frame global
+    frame=Frame(ventana, bg="#1232d5")
+    frame.pack(fill="both", expand=True)
+
+    #Creamos la cabecera de la ventana
+    label=Label(frame, text="Resultados de los Jugadores", font=("Helvetica",26, "bold"), bg="#1232d5")
+    label.pack(pady=10)
+
+    #Creamos el treeview para ver los resultados
+    tree_resultados=ttk.Treeview(frame)
+    tree_resultados.pack(pady=10)
+    tree_resultados["columns"]=("Nombre","Grupos", "Octavos", "Cuartos", "Semis", "Final", "Campeon", "Total")
+    tree_resultados.column("#0", width=0, stretch=NO)
+    for i in tree_resultados["columns"]:
+        tree_resultados.column(i, width=60, minwidth=30)
+        tree_resultados.heading(i, text=i)
+    #Insertamos los resultados de cada usuario
+    cont=0
+    for i in resultados:
+        tree_resultados.insert(parent="", index="end", iid=cont, text="", values=tuple(i))
+        cont+=1
+
+    #Creamos la imagen del balon
+    imagen_balon=PhotoImage(file=os.path.join(os.getcwd(),"Archivos Extra\\balon.png"))
+    label_balon=Label(frame, image=imagen_balon, bg="#1232d5")
+    label_balon.pack(pady=15)
+
+    ventana.mainloop()
+
 #Funcion para obtener las puntuaciones y resultados de los jugadores
 def obtener_resultados():
 
@@ -104,6 +141,7 @@ def obtener_resultados():
             jugador.consolacion=i["Consolacion"]
             #Añadimos la propiedad del tercero
             jugador.tercero=i["Tercero"]
+            
             #Comparamos el jugador con el jugador especial (resultados reales)
             #Obtenemos los puntos de la fase de grupos tras haber juntado los grupos del usuario y los reales y añadimos las propiedades de los puntos por grupo y la puntuacion total de la fase de grupos
             jugador.puntos_por_grupo=comparador.puntos_grupos(comparador.junta_grupos(jugador.grupos, jugador_especial.grupos))[1]
@@ -128,7 +166,8 @@ def obtener_resultados():
 
         #Obtenemos los resultados finales llamando a resultados_finales
         puntuacion_final=comparador.resultados_finales(objetos_jugadores)
-        print(puntuacion_final)
+        #Llamamos a la funcion que nos muestra la ventana de los resultados. Ademas le pasamos el total calculado
+        ventana_resultados([i+[sum(i[1:])] for i in puntuacion_final])
 
     #Si aun no hay ningun jugador mostramos un mensaje de warning
     except:
